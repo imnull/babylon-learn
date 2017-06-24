@@ -1,0 +1,158 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title></title>
+<script type="text/javascript" src="./lib/babylon.custom.js"></script>
+<style type="text/css">
+
+html, body {
+	overflow: hidden;
+	width   : 100%;
+	height  : 100%;
+	margin  : 0;
+	padding : 0;
+}
+
+#renderCanvas {
+	width   : 100%;
+	height  : 100%;
+	touch-action: none;
+}
+
+</style>
+</head>
+<body>
+<canvas id="renderCanvas"></canvas>
+<script type="text/javascript">
+
+!function(BABYLON, host){
+
+host = host || {};
+
+if(typeof(exports) != 'undefined'){
+	host = exports;
+}
+
+function objectPropertyReflector(serial = '', context, level = 0){
+	if(!serial.length) return context || undefined;
+	if(level < 1 && typeof(context) == 'undefined'){
+		context = this;
+	}
+	if(!context) return undefined;
+
+	let idx = serial.indexOf('.');
+	if(idx < 0){
+		return context[serial];
+	} else {
+		return objectPropertyReflector(serial.substr(idx + 1), context[serial.substr(0, idx)], level + 1);
+	}
+}
+function ObjectReflector(type, args = [], isClass = true){
+	this.type = type;
+	this.isClass = isClass;
+	this.args = args;
+}
+ObjectReflector.prototype = {
+	invoke: function(){
+		let m = objectPropertyReflector(this.type);
+		if(typeof(m) == 'function'){
+			return this.isClass ? new m(...this.args) : m(...this.args);
+		} else {
+			return m;
+		}
+	}
+};
+
+function DhChart3d(domCanvas, configure = {}){
+	this.canvas =
+		typeof(domCanvas) == 'string'
+		? document.querySelector(domCanvas)
+		: domCanvas
+		;
+	this.configure = Object.assign({
+		antiAlias: true,
+		cameraPosition: [1,1,12],
+		cameraTargetPosition: [0,0,0]
+	}, configure);
+
+	this.idCounter = 0;
+	this.init();
+}
+DhChart3d.prototype = {
+	init(){
+		this.id = 0;
+		this.engine = new BABYLON.Engine(this.canvas, this.configure.antiAlias);
+		this.scene = new BABYLON.Scene(this.engine);
+		this.engine.runRenderLoop(function(){
+			this.scene.render();
+		}.bind(this));
+
+		// // create a FreeCamera, and set its position to v3CameraPosition
+		// this.camera = new BABYLON.FreeCamera('camera', new BABYLON.Vector3(...this.configure.cameraPosition), this.scene);
+		// // target the camera to scene origin
+		// this.camera.setTarget(new BABYLON.Vector3(...this.configure.cameraTargetPosition));
+
+		// Create a camera
+		this.camera = new BABYLON.ArcRotateCamera("Camera"
+			, ...this.configure.cameraPosition
+			, new BABYLON.Vector3(...this.configure.cameraTargetPosition)
+			, this.scene
+			);
+
+		// Attach camera to canvas
+		this.camera.attachControl(this.canvas, false);
+
+		// attach the camera to the canvas
+		this.camera.attachControl(this.canvas, false);
+
+		window.addEventListener('resize', function() {
+			this.engine.resize();
+		}.bind(this));
+	},
+	genId(prefix){ return prefix + ++this.idCounter; },
+
+	createHemisphericLight(x = 0, y = 1, z = 0){
+		// create a basic light, aiming 0,1,0 - meaning, to the sky
+		return new BABYLON.HemisphericLight(
+			this.genId('light')
+			, new BABYLON.Vector3(x, y, z)
+			, this.scene
+			);
+	},
+	createSphere(subdivisions = 16, radius = 2){
+		// create a built-in "sphere" shape; its constructor takes 4 params: name, subdivisions, radius, scene
+		return BABYLON.Mesh.CreateSphere(
+			this.genId('sphere')
+			, subdivisions
+			, radius
+			, this.scene
+			);
+	},
+	createGround(width = 6, height = 6, subdivisions = 2){
+		// create a built-in "ground" shape; its constructor takes 5 params: name, width, height, subdivisions and scene
+		return BABYLON.Mesh.CreateGround(
+			this.genId('ground')
+			, width
+			, height
+			, subdivisions
+			, this.scene
+			);
+	}
+};
+
+host.DhChart3d = DhChart3d;
+
+}(BABYLON, this);
+
+
+window.addEventListener('load', () => {
+	let w = new DhChart3d('#renderCanvas', {
+		antiAlias: false
+	});
+	w.createHemisphericLight();
+	w.createSphere().position.y = 1;
+	w.createGround();
+})
+</script>
+</body>
+</html>
