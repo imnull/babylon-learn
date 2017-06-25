@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title></title>
+<script type="text/javascript" src="./lib/babylon.custom.js"></script>
+<script type="text/javascript" src="./dh-charts3d.js"></script>
+</head>
+<style type="text/css">
+
+html, body {
+	overflow: hidden;
+	width   : 100%;
+	height  : 100%;
+	margin  : 0;
+	padding : 0;
+}
+
+#renderCanvas {
+	width   : 100%;
+	height  : 100%;
+	touch-action: none;
+}
+
+</style>
+<body>
+
+<canvas id="renderCanvas"></canvas>
+<script type="text/javascript">
+
+
+window.addEventListener('load', () => {
+	let w = new DhChart3d('#renderCanvas', {
+		antiAlias: 1,
+		cameraPosition: [1.1, 1.1, 15],
+		cameraTargetPosition: [0, 2.5, 0]
+	});
+
+	let boxMat = w.createStandardMaterial(0, 0, 1);
+	let alpha = 0.5
+
+	w.createHemisphericLight(0, -1, 0).groundColor = w.createColor3(1, 1, 1);
+
+	let box1 = w.createBox(1);
+	box1.material = boxMat;
+	box1.material.alpha = alpha;
+	// box.material.wireframe = true;
+	box1.showBoundingBox = true;
+	box1.scaling.y = 4;
+	box1.position.x = -4;
+	box1.position.y = box1.scaling.y / 2;
+
+	let box2 = w.createBox(1);
+	box2.material = boxMat;
+	box2.material.alpha = alpha;
+	// box2.material.wireframe = true;
+	box2.showBoundingBox = true;
+	box2.scaling.y = 3;
+	box2.position.x = -2;
+	box2.position.y = box2.scaling.y / 2;
+
+	let box3 = w.createBox(1);
+	box3.material = boxMat;
+	box3.material.alpha = alpha;
+	// box3.material.wireframe = true;
+	box3.showBoundingBox = true;
+	box3.scaling.y = 2;
+	box3.position.x = -0;
+	box3.position.y = box3.scaling.y / 2;
+
+	let box4 = w.createBox(1);
+	box4.material = boxMat;
+	box4.material.alpha = alpha;
+	// box4.material.wireframe = true;
+	box4.showBoundingBox = true;
+	box4.scaling.y = 4.5;
+	box4.position.x = 2;
+	box4.position.y = box4.scaling.y / 2;
+
+	let box5 = w.createBox(1);
+	box5.material = boxMat;
+	box5.material.alpha = alpha;
+	// box5.material.wireframe = true;
+	box5.showBoundingBox = true;
+	box5.scaling.y = 6;
+	box5.position.x = 4;
+	box5.position.y = box5.scaling.y / 2;
+
+
+	// let backgroundTexture = new BABYLON.DynamicTexture("dynamic texture", 512, w.scene, true);
+
+	let g = w.createGround(100, 100);
+	g.material = boxMat;
+	// g.material = backgroundTexture;
+	// backgroundTexture.drawText("Eternalcoding", null, 80, "bold 70px Segoe UI", "white", "#555555");
+
+})
+
+
+</script>
+
+</body>
+</html>

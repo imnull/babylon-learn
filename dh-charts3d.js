@@ -1,30 +1,3 @@
-<!DOCTYPE html>
-<html>
-<head>
-<title></title>
-<script type="text/javascript" src="./lib/babylon.custom.js"></script>
-<style type="text/css">
-
-html, body {
-	overflow: hidden;
-	width   : 100%;
-	height  : 100%;
-	margin  : 0;
-	padding : 0;
-}
-
-#renderCanvas {
-	width   : 100%;
-	height  : 100%;
-	touch-action: none;
-}
-
-</style>
-</head>
-<body>
-<canvas id="renderCanvas"></canvas>
-<script type="text/javascript">
-
 !function(BABYLON, host){
 
 host = host || {};
@@ -109,12 +82,20 @@ DhChart3d.prototype = {
 			this.engine.resize();
 		}.bind(this));
 	},
-	genId(prefix){ return prefix + ++this.idCounter; },
+	getId(prefix){ return prefix + ++this.idCounter; },
 
+	createColor3(r, g, b){
+		return new BABYLON.Color3(r, g, b);
+	},
+	createStandardMaterial(r = 1, g = 1, b = 1){
+		let m = new BABYLON.StandardMaterial(this.getId('std'), this.scene);
+		m.diffuseColor = this.createColor3(r, g, b);
+		return m;
+	},
 	createHemisphericLight(x = 0, y = 1, z = 0){
 		// create a basic light, aiming 0,1,0 - meaning, to the sky
 		return new BABYLON.HemisphericLight(
-			this.genId('light')
+			this.getId('light')
 			, new BABYLON.Vector3(x, y, z)
 			, this.scene
 			);
@@ -122,7 +103,7 @@ DhChart3d.prototype = {
 	createSphere(subdivisions = 16, radius = 2){
 		// create a built-in "sphere" shape; its constructor takes 4 params: name, subdivisions, radius, scene
 		return BABYLON.Mesh.CreateSphere(
-			this.genId('sphere')
+			this.getId('sphere')
 			, subdivisions
 			, radius
 			, this.scene
@@ -131,10 +112,17 @@ DhChart3d.prototype = {
 	createGround(width = 6, height = 6, subdivisions = 2){
 		// create a built-in "ground" shape; its constructor takes 5 params: name, width, height, subdivisions and scene
 		return BABYLON.Mesh.CreateGround(
-			this.genId('ground')
+			this.getId('ground')
 			, width
 			, height
 			, subdivisions
+			, this.scene
+			);
+	},
+	createBox(size = 1){
+		return BABYLON.Mesh.CreateBox(
+			this.getId('box')
+			, size
 			, this.scene
 			);
 	}
@@ -143,16 +131,3 @@ DhChart3d.prototype = {
 host.DhChart3d = DhChart3d;
 
 }(BABYLON, this);
-
-
-window.addEventListener('load', () => {
-	let w = new DhChart3d('#renderCanvas', {
-		antiAlias: false
-	});
-	w.createHemisphericLight();
-	w.createSphere(32, 2).position.y = 2;
-	w.createGround();
-})
-</script>
-</body>
-</html>
