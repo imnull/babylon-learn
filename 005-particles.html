@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title></title>
+<script type="text/javascript" src="./lib/babylon.custom.js"></script>
+<script type="text/javascript" src="./dh-charts3d.js"></script>
+</head>
+<style type="text/css">
+
+html, body {
+	overflow: hidden;
+	width   : 100%;
+	height  : 100%;
+	margin  : 0;
+	padding : 0;
+}
+
+#renderCanvas {
+	width   : 100%;
+	height  : 100%;
+	touch-action: none;
+}
+
+</style>
+<body>
+
+<canvas id="renderCanvas"></canvas>
+<script type="text/javascript">
+
+class Type {
+
+	static o_str(v){ return Object.prototype.toString.call(v); }
+	static t_str(v){ return typeof(v); }
+
+	static IsObject(v){ return v && Type.o_str(v) == '[object Object]'; }
+	static obj(v){ return Type.IsObject(v); }
+
+	static IsArray(v){ return v && Type.o_str(v) == '[object Array]'; }
+	static arr(v){ return Type.IsArray(v); }
+
+	static IsNil(v){ return typeof(v) == 'undefined' || v === null; }
+	static nil(v){ return Ty.IsNil(v); }
+
+}
+
+class LayerCalculator{
+
+	static Max(arr){
+		let max = null;
+		arr.forEach(v => {
+			if(max === null || max < v) max = v;
+		});
+		return max;
+	}
+
+	static Team(arr){
+		let m = LayerCalculator.Max(arr), l = arr.length;
+		return arr.map((v, i) => ({ coord: i / l, value: v / m }));
+	}
+}
+
+console.log(LayerCalculator.Team([1,2,3,16,4,5,6,7]))
+
+let data = [1,2,3,7,3,5,2,3.5];
+
+function CreateParticle(fountain, color, scene){
+	var particleSystem = new BABYLON.ParticleSystem("particles", 2000, scene);
+
+    //Texture of each particle
+    particleSystem.particleTexture = new BABYLON.Texture("textures/flare.png", scene);
+
+    // Where the particles come from
+    particleSystem.minEmitBox = new BABYLON.Vector3(0, 0.5, 0); // Starting all from
+    particleSystem.maxEmitBox = new BABYLON.Vector3(0, -.5, 0); // To...
+
+    // Colors of all particles
+    particleSystem.color1 = new BABYLON.Color4(...color, 1.0);
+    particleSystem.color2 = new BABYLON.Color4(...color, 1.0);
+    particleSystem.colorDead = new BABYLON.Color4(0, 0, 0.2, 0.0);
+
+    // Size of each particle (random between...
+    particleSystem.minSize = 0.1;
+    particleSystem.maxSize = 0.3;
+
+    // Life time of each particle (random between...
+    particleSystem.minLifeTime = 0.1;
+    particleSystem.maxLifeTime = 0.5;
+
+    // Emission rate
+    particleSystem.emitRate = 1000;
+
+    // Blend mode : BLENDMODE_ONEONE, or BLENDMODE_STANDARD
+    particleSystem.blendMode = BABYLON.ParticleSystem.BLENDMODE_ONEONE;
+
+    // Set the gravity of all particles
+    particleSystem.gravity = new BABYLON.Vector3(0, -9.81, 0);
+
+    // Direction of each particle after it has been emitted
+    particleSystem.direction1 = new BABYLON.Vector3(-1, 1, -1);
+    particleSystem.direction2 = new BABYLON.Vector3(1, 1, 1);
+
+    // Angular speed, in radians
+    particleSystem.minAngularSpeed = 0;
+    particleSystem.maxAngularSpeed = Math.PI;
+
+    // Speed
+    particleSystem.minEmitPower = 1;
+    particleSystem.maxEmitPower = 1;
+    particleSystem.updateSpeed = 0.005;
+
+    particleSystem.emitter = fountain; // the starting object, the emitter
+    
+    // Start the particle system
+    particleSystem.start();
+}
+
+
+window.addEventListener('load', () => {
+
+	let width = 14;
+	let height = 10;
+	let scale = 0.5
+	let alpha = 0.8;
+	let showBounding = 0;
+	let wireframe = 0;
+	let light1Value = 0.4;
+	let light2Value = 0.5;
+
+	let w = new DhChart3d('#renderCanvas', {
+		antiAlias: 1,
+		cameraPosition: [1, 1.4, 20],
+		cameraTargetPosition: [0, height / scale / 3.5, 0]
+	});
+
+	let boxMat = w.createStandardMaterial(1, 1, 1);
+	let groundMat = w.createStandardMaterial(1, 1, 1);
+
+	let matTeam = [
+		[1, 0, 0],
+		[0, 1, 0],
+		[0, 0, 1],
+		[1, 1, 0],
+		[1, 0, 1],
+		[0, 1, 1],
+		[1, 1, 1]
+	];
+
+	let skylight = w.createHemisphericLight(0, -1, 0);
+	skylight.groundColor = w.createColor3(1, 1, 1);
+    skylight.intensity = light1Value;
+
+	let light = new BABYLON.PointLight("light1", new BABYLON.Vector3(5, 17, 10), w.scene);
+	light.groundColor = w.createColor3(0, 0, 1);
+    light.intensity = light2Value;
+
+    var shadowGenerator = new BABYLON.ShadowGenerator(1024, light);
+	shadowGenerator.setDarkness(0.5);
+	shadowGenerator.usePoissonSampling = true;
+	shadowGenerator.useExponentialShadowMap = true;
+	shadowGenerator.useBlurExponentialShadowMap = true;
+
+	let fountain;
+
+	let team = LayerCalculator.Team(data);
+	team.forEach((v, i) => {
+		let box = w.createBox(1);
+		let color = matTeam[i % matTeam.length];
+		box.material = w.createStandardMaterial(...color);
+		box.material.alpha = alpha;
+		box.showBoundingBox = showBounding;
+		box.material.wireframe = wireframe;
+		box.position.x = width * v.coord - (width * .5);
+		box.scaling.y = height * v.value;
+		box.position.y = (box.scaling.y * 1) / 2;
+
+		shadowGenerator.getShadowMap().renderList.push(box);
+
+		CreateParticle(box, color, w.scene);
+
+	});
+
+
+
+
+
+	let backgroundTexture = new BABYLON.DynamicTexture("dynamic texture", 512, w.scene, true);
+
+	let g1 = w.createGround(100, 100);
+	g1.material = groundMat;
+	g1.position.z = -5;
+	g1.rotation.x = Math.PI / 2;
+	g1.receiveShadows = true;
+
+	let g2 = w.createGround(100, 100);
+	g2.material = groundMat;
+	g2.receiveShadows = true;
+
+	let g3 = w.createGround(100, 100);
+	g3.material = groundMat;
+	g3.position.x = -15;
+	g3.rotation.z = -Math.PI / 2;
+	g3.receiveShadows = true;
+
+	// g.material = backgroundTexture;
+	// backgroundTexture.drawText("Eternalcoding", null, 80, "bold 70px Segoe UI", "white", "#555555");
+
+})
+
+
+</script>
+
+</body>
+</html>
