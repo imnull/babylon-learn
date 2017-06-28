@@ -1,0 +1,168 @@
+<!DOCTYPE html>
+<html>
+<head>
+<title></title>
+<script type="text/javascript" src="./lib/babylon.custom.js"></script>
+<script type="text/javascript" src="./dh-charts3d.js"></script>
+</head>
+<style type="text/css">
+
+html, body {
+	overflow: hidden;
+	width   : 100%;
+	height  : 100%;
+	margin  : 0;
+	padding : 0;
+}
+
+#renderCanvas {
+	width   : 100%;
+	height  : 100%;
+	touch-action: none;
+}
+
+</style>
+<body>
+
+<canvas id="renderCanvas"></canvas>
+<script type="text/javascript">
+
+class Type {
+
+	static o_str(v){ return Object.prototype.toString.call(v); }
+	static t_str(v){ return typeof(v); }
+
+	static IsObject(v){ return v && Type.o_str(v) == '[object Object]'; }
+	static obj(v){ return Type.IsObject(v); }
+
+	static IsArray(v){ return v && Type.o_str(v) == '[object Array]'; }
+	static arr(v){ return Type.IsArray(v); }
+
+	static IsNil(v){ return typeof(v) == 'undefined' || v === null; }
+	static nil(v){ return Ty.IsNil(v); }
+
+}
+
+class LayerCalculator{
+
+	static Max(arr){
+		let max = null;
+		arr.forEach(v => {
+			if(max === null || max < v) max = v;
+		});
+		return max;
+	}
+
+	static Team(arr){
+		let m = LayerCalculator.Max(arr), l = arr.length;
+		return arr.map((v, i) => ({ coord: i / l, value: v / m }));
+	}
+}
+
+console.log(LayerCalculator.Team([1,2,3,16,4,5,6,7]))
+
+let data = [1,2,3,7,3,5,2,3.5];
+
+window.addEventListener('load', () => {
+
+	let width = 14;
+	let height = 10;
+	let scale = 0.5
+
+	let w = new DhChart3d('#renderCanvas', {
+		antiAlias: 1,
+		cameraPosition: [1, 1.4, 20],
+		cameraTargetPosition: [0, height / scale / 3.5, 0]
+	});
+
+	let boxMat = w.createStandardMaterial(1, 1, 1);
+	let groundMat = w.createStandardMaterial(1, 1, 1);
+	let alpha = 1
+	let showBounding = false;
+
+	let matTeam = [
+		w.createStandardMaterial(1, 0, 0),
+		w.createStandardMaterial(0, 1, 0),
+		w.createStandardMaterial(0, 0, 1),
+		w.createStandardMaterial(1, 1, 0),
+		w.createStandardMaterial(1, 0, 1),
+		w.createStandardMaterial(0, 1, 1),
+		w.createStandardMaterial(1, 1, 1)
+	];
+
+	let skylight = w.createHemisphericLight(0, -1, 0);
+	skylight.groundColor = w.createColor3(1, 1, 1);
+    skylight.intensity = 0.5;
+
+	let light = new BABYLON.PointLight("light1", new BABYLON.Vector3(5, 17, 10), w.scene);
+	light.groundColor = w.createColor3(1, 1, 1);
+    light.intensity = 0.6;
+
+ //    var knot = BABYLON.Mesh.CreateTorusKnot("knot", 2, 0.2, 128, 64, 4, 1, w.scene);	
+	// var torus = BABYLON.Mesh.CreateTorus("torus", 8, 1, 32, w.scene, false);
+
+	// var torusMat = new BABYLON.StandardMaterial("mat", w.scene);
+	// torus.material = torusMat;
+	// torusMat.diffuseColor = BABYLON.Color3.Red();
+	
+	// var knotMat = new BABYLON.StandardMaterial("mat", w.scene);
+	// knot.material = knotMat;
+	// knotMat.diffuseColor = BABYLON.Color3.White();
+
+	var shadowGenerator = new BABYLON.ShadowGenerator(1024, light);
+	// shadowGenerator.getShadowMap().renderList.push(knot, torus);
+	shadowGenerator.setDarkness(0.5);
+	shadowGenerator.usePoissonSampling = true;
+
+	// let shadowGenerator = new BABYLON.ShadowGenerator(1024, light);
+
+	shadowGenerator.usePoissonSampling = true;
+	shadowGenerator.useExponentialShadowMap = true;
+	shadowGenerator.useBlurExponentialShadowMap = true;
+
+
+	let team = LayerCalculator.Team(data);
+	let colSize = width / data.length * .9;
+	
+	team.forEach((v, i) => {
+		let box = w.createBox(1);
+		box.material = matTeam[i % matTeam.length];
+		box.material.alpha = alpha;
+		box.showBoundingBox = showBounding;
+		// box.material.wireframe = true;
+		box.position.x = width * v.coord - (width * .5);
+		box.scaling.y = height * v.value;
+		box.position.y = (box.scaling.y * 1) / 2;
+
+		shadowGenerator.getShadowMap().renderList.push(box);
+
+	})
+
+
+	// let backgroundTexture = new BABYLON.DynamicTexture("dynamic texture", 512, w.scene, true);
+
+	let g1 = w.createGround(100, 100);
+	g1.material = groundMat;
+	g1.position.z = -5;
+	g1.rotation.x = Math.PI / 2;
+	g1.receiveShadows = true;
+
+	let g2 = w.createGround(100, 100);
+	g2.material = groundMat;
+	g2.receiveShadows = true;
+
+	let g3 = w.createGround(100, 100);
+	g3.material = groundMat;
+	g3.position.x = -15;
+	g3.rotation.z = -Math.PI / 2;
+	g3.receiveShadows = true;
+	// g.material = backgroundTexture;
+	// backgroundTexture.drawText("Eternalcoding", null, 80, "bold 70px Segoe UI", "white", "#555555");
+
+})
+
+
+</script>
+
+</body>
+</html>
